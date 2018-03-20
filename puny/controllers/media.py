@@ -9,13 +9,13 @@ import requests
 
 class MediaController:
 
-    @expose(generic=True)
-    def index(self, *args, **kwargs):
-        pass
-
     @secure(auth.check_permissions)
-    @index.when(method='POST')
-    def publish(self, *args, **kwargs):
+    @expose(content_type='multipart/form-data')
+    @expose('json')
+    def index(self, *args, **kwargs):
+        if request.method != 'POST':
+            return
+
         if 'file' not in request.params:
             abort(400, 'Invalid request: no files uploaded.')
 

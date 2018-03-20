@@ -16,22 +16,8 @@ import jsonschema
 import requests
 
 
-class ForceJSONContentTypeHook(PecanHook):
-    '''
-    Some Micropub clients aren't very smart about setting Content-Type headers.
-    Force a proper `application/json` header on their behalf.
-    '''
-
-    def on_route(self, state):
-        if not state.request.headers.get('Content-Type'):
-            state.request.headers['Content-Type'] = 'application/json'
-        return PecanHook.on_route(self, state)
-
 
 class MicropubController:
-
-    __hooks__ = [ForceJSONContentTypeHook()]
-
 
     @expose('json', generic=True)
     def index(self, *args, **kwargs):
