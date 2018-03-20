@@ -1,0 +1,152 @@
+<%!
+  import json
+  import microformats2
+  import maya
+
+  from urllib.parse import urlparse
+%>
+
+<%def name="entry(type, properties)">
+
+  <%
+    post_type = microformats2.get_post_type({
+      'type': type, 
+      'properties': properties
+    }, extended=True)
+
+    content = properties['content'][0] 
+    if isinstance(content, str):
+        content = {'value': content}
+  %>
+
+  <div class="entry h-entry">
+    
+    % if post_type == microformats2.PostTypes.article:
+    <h2 class="name p-name">${ properties['name'][0] }</h2>
+      % if 'html' in content:
+      <div class="content html">
+        ${content['html']}
+      </div>
+      % else:
+      <div class="content text">
+        ${content['value']}
+      </div>
+      % endif
+    
+    % elif post_type == microformats2.PostTypes.note:
+      % if 'html' in content:
+      <div class="content html">
+        ${content['html']}
+      </div>
+      % else:
+      <div class="content text">
+        ${content['value']}
+      </div>
+      % endif
+    
+    % elif post_type == microformats2.PostTypes.like:
+    <div class="content like">
+      Liked <a class="u-like-of" href="${properties['like-of'][0]}">a post</a>
+      on ${urlparse(properties['like-of'][0]).netloc}.
+    </div>
+    
+    % elif post_type == microformats2.PostTypes.repost:
+    <div class="content repost">
+      Repost: <a class="u-repost-of" href="${properties['repost-of'][0]}">a post</a>
+      on ${urlparse(properties['repost-of'][0]).netloc}.
+    </div>
+    
+    % elif post_type == microformats2.PostTypes.bookmark:
+    <h2>
+        Bookmark: <a class="u-bookmark-of" href="${properties['bookmark-of'][0]}">a post</a>
+        on ${urlparse(properties['bookmark-of'][0]).netloc}.
+    </h2>
+    <div class="content bookmark">
+      % if 'html' in content:
+      <div class="content html">
+        ${content['html']}
+      </div>
+      % else:
+      <div class="content text">
+        ${content['value']}
+      </div>
+      % endif
+    </div>
+    
+    % elif post_type == microformats2.PostTypes.reply:
+      <div class="context">
+        % for reply in properties['in-reply-to']:
+        <div class="in-reply-to">
+          Reply to: <a class="u-in-reply-to" href="${reply}">a post on ${urlparse(reply).netloc}</a>.
+        </div>
+        % endfor
+      </div>
+      
+      % if 'name' in properties:
+      <h2 class="name p-name">${ properties['name'][0] }</h2>
+      % endif
+      % if 'html' in content:
+      <div class="content html">
+        ${content['html']}
+      </div>
+      % else:
+      <div class="content text">
+        ${content['value']}
+      </div>
+      % endif
+
+    % elif post_type == microformats2.PostTypes.event:
+
+    % elif post_type == microformats2.PostTypes.photo:
+    <div class="photos">
+      % if len(properties['photo']) > 1:
+      <div class="multi-photo photos-${len(properties['photo'])}">
+        % for photo in properties['photo']:
+        <a href="${photo}" class="photo">
+          <img src="${photo}" class="post-img u-photo">
+        </a>
+        % endfor
+      </div>
+      % else:
+      <img src="${properties['photo'][0]}" class="photo u-photo">
+      % endif
+    </div>
+    % elif post_type == microformats2.PostTypes.video:
+    
+    % elif post_type == microformats2.PostTypes.rsvp:
+
+    % endif
+    
+    <!-- metadata -->
+    <div class="meta">
+      <!-- categories -->
+      % if 'category' in properties:
+      <ul class="categories">
+      % for category in properties['category']:
+        <li class="category p-category">${category}</li>
+      % endfor
+      </ul>
+      % endif
+
+      <!-- published -->
+      % if 'published' in properties:
+      <a href="${properties.get('url', [''])[0]}" class="u-url u-uid">
+        <time class="dt-published" datetime="${properties['published'][0]}">
+          ${maya.parse(properties['published'][0]).slang_time()}
+        </time>
+      </a>
+      % endif
+
+      <!-- syndication -->
+      % if 'syndication' in properties:
+      <ul class="syndication">
+        % for syndication in properties['syndication']:
+        <li><a class="u-syndication" href="${syndication}">${syndication}</a></li>
+        % endfor
+      </ul>
+      % endif
+    </div>
+
+  </div>
+
+</%def>

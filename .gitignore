@@ -1,0 +1,5 @@
+*.pyc
+content.db*
+__pycache__
+*.egg-info
+public/u

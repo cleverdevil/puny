@@ -1,0 +1,28 @@
+<%
+  from pecan import conf
+%>
+
+<html>
+    <head>
+        <title>${self.title()}</title>
+        ${self.style()}
+        ${self.javascript()}
+        <link rel="authorization_endpoint" href="${conf.indieauth.auth}">
+        <link rel="token_endpoint" href="${conf.indieauth.token}">
+        <link rel="micropub" href="${conf.app.public_url + '/micropub'}">
+    </head>
+    <body>
+        ${self.body()}
+    </body>
+</html>
+
+<%def name="title()">
+    Default Title
+</%def>
+
+<%def name="style()">
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/style.css" />
+</%def>
+
+<%def name="javascript()">
+</%def>

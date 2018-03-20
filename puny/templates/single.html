@@ -1,0 +1,10 @@
+<%inherit file="layout.html" />
+<%namespace name="mf2" file="mf2tohtml.html" />
+
+<%def name="title()">
+  ${ properties.get('name', ['View Post'])[0] }
+</%def>
+
+<div class="single">
+  ${mf2.entry(type, properties)}
+</div>

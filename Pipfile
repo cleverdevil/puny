@@ -1,0 +1,22 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[packages]
+
+pecan = "*"
+jsonschema = "*"
+"345613f" = {path = "./../../microformats2"}
+requests = "*"
+hashfs = "*"
+maya = "*"
+awesome-slugify = "*"
+ZODB = "*"
+
+
+[dev-packages]
+
+watchdog = "*"

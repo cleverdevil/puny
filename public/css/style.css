@@ -1,0 +1,23 @@
+body {
+  background: #ccc;
+  text-align: center;
+}
+
+div.timeline, div.single {
+  text-align: left;
+  width: 800px;
+  margin: 0 auto;
+  padding: 20px 0;
+  background: #eeeeff;
+}
+
+div.entry {
+  margin: 20px 20px;
+  padding: 20px;
+
+  background: white; 
+}
+
+div.entry img {
+  max-width: 720px;
+}

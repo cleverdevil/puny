@@ -1,0 +1,12 @@
+<%inherit file="layout.html" />
+<%namespace name="mf2" file="mf2tohtml.html" />
+
+<%def name="title()">
+  Timeline 
+</%def>
+
+<div class="timeline h-feed">
+% for entry in entries:
+  ${mf2.entry(entry['type'], entry['properties'])}
+% endfor
+</div>
