@@ -4,6 +4,7 @@ from .. import storage
 
 
 class DocumentController:
+
     def __init__(self, doc):
         self.doc = doc
 
@@ -13,11 +14,10 @@ class DocumentController:
 
 
 class ContentController:
+
     @expose()
     def _lookup(self, slug, *remainder):
-        doc = storage.get_by_permalink(
-            conf.app.public_url + '/view/entry/' + slug
-        )
+        doc = storage.get_by_permalink(conf.app.public_url + '/view/entry/' + slug)
         if doc is None:
             abort(404)
 
@@ -25,7 +25,6 @@ class ContentController:
 
 
 class ViewController:
-
     entry = ContentController()
 
     @expose(template='timeline.html')
@@ -33,4 +32,3 @@ class ViewController:
         entries = storage.find(limit=limit, offset=offset)
 
         return dict(entries=entries)
-

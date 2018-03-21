@@ -16,7 +16,6 @@ import jsonschema
 import requests
 
 
-
 class MicropubController:
 
     @expose('json', generic=True)
@@ -28,14 +27,10 @@ class MicropubController:
         '''
 
         if kwargs.get('q') == 'config':
-            return {
-                'media-endpoint': conf.app.public_url + '/media'
-            }
+            return {'media-endpoint': conf.app.public_url + '/media'}
 
         if kwargs.get('q') == 'syndicate-to':
-            return {
-                'syndicate-to': []
-            }
+            return {'syndicate-to': []}
 
         if kwargs.get('q') == 'source':
             mf2 = storage.get_by_permalink(kwargs['url'])
@@ -50,7 +45,6 @@ class MicropubController:
             return copy
 
         return dict()
-
 
     @secure(auth.check_permissions)
     @index.when(method='POST')
@@ -101,35 +95,38 @@ class MicropubController:
             if self.update_post(payload):
                 response.status = 204
                 return dict()
+
             abort(400, 'Invalid request data')
         elif payload.get('action') == 'delete':
             if self.delete_post(payload):
                 response.status = 204
                 return dict()
+
             abort(400, 'Invalid request data')
         elif payload.get('action') == 'undelete':
             if self.undelete_post(payload):
                 response.status = 204
                 return dict()
+
             abort(400, 'Invalid request data')
 
         # handle create requests... first, if there is no publish date,
         # synthesize one
         if 'published' not in payload['properties']:
-            payload['properties']['published'] = [
-                datetime.utcnow().isoformat()
-            ]
+            payload['properties']['published'] = [datetime.utcnow().isoformat()]
 
         # if an author property hasn't been provided, synthesize one
         if 'author' not in payload['properties']:
-            payload['properties']['author'] = [{
-                'type': ['h-card'],
-                'properties': {
-                    'name': [ conf.author.name ],
-                    'url': [ conf.author.url ],
-                    'photo': [ conf.author.photo ]
+            payload['properties']['author'] = [
+                {
+                    'type': ['h-card'],
+                    'properties': {
+                        'name': [conf.author.name],
+                        'url': [conf.author.url],
+                        'photo': [conf.author.photo],
+                    },
                 }
-            }]
+            ]
 
         # validate that the payload is valid MF2 JSON, matching some known
         # vocabulary
@@ -143,7 +140,9 @@ class MicropubController:
 
         # generate a slug for this post
         page_slug = slug.generate_slug(payload)
-        payload['properties']['url'] = [conf.app.public_url + '/view/entry/' + page_slug]
+        payload['properties']['url'] = [
+            conf.app.public_url + '/view/entry/' + page_slug
+        ]
 
         # store the raw content in our database
         storage.store(payload)
@@ -151,7 +150,6 @@ class MicropubController:
         # redirect to the rendered content
         response.status = '201'
         response.headers['Location'] = payload['properties']['url'][0]
-
 
     def update_post(self, payload):
         '''
@@ -191,7 +189,6 @@ class MicropubController:
 
         return True
 
-
     def delete_post(self, payload):
         '''
         Handle (soft) deleting a post.
@@ -206,7 +203,6 @@ class MicropubController:
         storage.delete(payload['url'], soft=True)
 
         return True
-
 
     def undelete_post(self, payload):
         '''
@@ -223,7 +219,6 @@ class MicropubController:
 
         return True
 
-
     def decode_mf2(self, post, media_upload=False):
         '''
         The client has provided formencoded data, like an animal.
@@ -231,11 +226,9 @@ class MicropubController:
         '''
 
         mf2 = {}
-        mf2['type'] = [ 'h-' + post.get('h', 'entry')]
+        mf2['type'] = ['h-' + post.get('h', 'entry')]
         mf2['properties'] = {}
-        mf2['properties']['content'] = [
-            post.get('content', '')
-        ]
+        mf2['properties']['content'] = [post.get('content', '')]
 
         for key in post.keys():
             if key in ('h', 'content', 'access_token'):
@@ -247,14 +240,15 @@ class MicropubController:
                     continue
 
                 permalink = media.upload_file(post[key].file, post[key].filename)
-                mf2['properties'].setdefault(key.replace('[]', ''), []).append(permalink)
+                mf2['properties'].setdefault(key.replace('[]', ''), []).append(
+                    permalink
+                )
 
                 continue
 
             mf2['properties'][key.replace('[]', '')] = post.getall(key)
 
         return mf2
-
 
     def validate_content(self, mf2):
         '''
@@ -265,5 +259,6 @@ class MicropubController:
             validate(mf2)
         except jsonschema.ValidationError as e:
             return e
+
         except:
             return 'Invalid Request'

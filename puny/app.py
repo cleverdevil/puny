@@ -21,23 +21,21 @@ class ForceJSONContentTypeHook(PecanHook):
         return PecanHook.on_route(self, state)
 
 
-
 def setup_app(config):
-
     app_conf = dict(config.app)
 
     return make_app(
         app_conf.pop('root'),
         logging=getattr(config, 'logging', {}),
-        hooks= [
+        hooks=[
             TransactionHook(
                 storage.start,
                 storage.start_read_only,
                 storage.commit,
                 storage.rollback,
-                storage.clear
+                storage.clear,
             ),
-            ForceJSONContentTypeHook()
+            ForceJSONContentTypeHook(),
         ],
         **app_conf
     )

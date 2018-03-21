@@ -9,6 +9,7 @@ def unique_check(text, uids):
     permalink = conf.app.public_url + '/view/entry/' + text
     return storage.get_by_permalink(permalink, hidden=True) is None
 
+
 slugify_unique = UniqueSlugify(unique_check=unique_check)
 
 

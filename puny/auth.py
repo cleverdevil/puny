@@ -23,18 +23,17 @@ def check_permissions():
     # ping the token endpoint
     result = requests.get(
         conf.indieauth.token,
-        headers={
-            'Authorization': auth_header,
-            'Accept': 'application/json'
-        }
+        headers={'Authorization': auth_header, 'Accept': 'application/json'},
     )
 
     # ensure that the token is valid and is valid for us with the
     # correct scopes
     if result.status_code in (200, 201):
         request.auth = result.json()
-        if ((request.auth['me'] == conf.indieauth.me) or
-            (request.auth['me'][:-1] == conf.indieauth.me)):
+        if (
+            (request.auth['me'] == conf.indieauth.me)
+            or (request.auth['me'][:-1] == conf.indieauth.me)
+        ):
 
             # TODO: check scopes
             if 'create' in request.auth['scope']:

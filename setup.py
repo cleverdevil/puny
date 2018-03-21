@@ -15,10 +15,10 @@ setup(
         "requests",
         "hashfs",
         "maya",
-        "awesome-slugify"
+        "awesome-slugify",
     ],
     test_suite='puny',
     zip_safe=False,
     include_package_data=True,
-    packages=find_packages(exclude=['ez_setup'])
+    packages=find_packages(exclude=['ez_setup']),
 )

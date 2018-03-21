@@ -13,6 +13,7 @@ db = ZODB.DB(fs)
 
 
 class Entry(persistent.Persistent):
+
     def __init__(self, mf2, permalink):
         self.mf2 = mf2
         self.permalink = permalink
@@ -73,18 +74,24 @@ class EntryIndex(persistent.Persistent):
 
 
 # pecan specific transaction functions
+
+
 def start():
     request.transaction = transaction.TransactionManager()
     request.dbc = db.open(request.transaction)
 
+
 def start_read_only():
     start()
+
 
 def commit():
     request.transaction.commit()
 
+
 def rollback():
     request.transaction.abort()
+
 
 def clear():
     request.transaction.abort()
@@ -93,6 +100,8 @@ def clear():
 
 
 # direct access
+
+
 def connect():
     if not hasattr(request.dbc.root, 'entries'):
         request.dbc.root.entries = EntryIndex()
@@ -111,6 +120,7 @@ def get_by_permalink(permalink, hidden=False):
         if entry.deleted:
             if hidden:
                 return entry.mf2
+
         else:
             return entry.mf2
 
