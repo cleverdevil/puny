@@ -29,6 +29,6 @@ class ViewController:
 
     @expose(template='timeline.html')
     def index(self, limit=20, offset=0):
-        entries = storage.find(limit=limit, offset=offset)
+        entries = storage.find(limit=int(limit), offset=int(offset))
 
         return dict(entries=entries)

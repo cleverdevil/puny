@@ -30,7 +30,7 @@ def generate_slug(mf2):
                 elif isinstance(content, str):
                     seed = content
 
-    if len(seed) == 0:
+    if not seed:
         if 'like-of' in props:
             seed = 'like of ' + props['like-of'][0]
         elif 'bookmark-of' in props:

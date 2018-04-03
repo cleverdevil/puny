@@ -14,7 +14,7 @@
       'properties': properties
     }, extended=True)
 
-    content = properties['content'][0] 
+    content = properties.get('content',[''])[0] 
     if isinstance(content, str):
         content = {'value': content}
   %>

@@ -4,7 +4,6 @@ import ZODB, ZODB.FileStorage, BTrees.OOBTree
 import persistent
 import persistent.list
 import transaction
-
 import maya
 
 
@@ -23,6 +22,10 @@ class Entry(persistent.Persistent):
         self.mf2 = mf2
         self._p_changed = 1
 
+    @property
+    def published(self):
+        return self.mf2.get('properties', {}).get('published', [None])[0]
+
 
 class EntryIndex(persistent.Persistent):
 
@@ -36,6 +39,7 @@ class EntryIndex(persistent.Persistent):
         # add to "all" list
         entry = Entry(mf2, permalink)
         self.all.append(entry)
+        self.all.sort(key=lambda x: x.published)
 
         # add to permalink index
         self.by_permalink[permalink] = entry
@@ -52,7 +56,7 @@ class EntryIndex(persistent.Persistent):
             self.by_category.setdefault(category, []).append(entry)
 
     def delete(self, entry):
-        # remove "all" list
+        # remove from "all" list
         self.all.remove(entry)
 
         # remove from permalink index
@@ -151,7 +155,13 @@ def find(limit=20, offset=0):
     conn = connect()
 
     count = 0
+    skipped = 0
     for entry in reversed(conn.root.entries.all):
+        if skipped < offset:
+            if not entry.deleted:
+                skipped += 1
+                continue
+
         if not entry.deleted:
             count += 1
             yield entry.mf2
