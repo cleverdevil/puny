@@ -1,5 +1,9 @@
 from pecan import expose, request, response, abort, conf
+from pecan.core import Response
 from pecan.secure import secure
+
+from webob.static import FileIter
+from mimetypes import guess_type
 
 from .. import auth
 from .. import media
@@ -13,9 +17,6 @@ class MediaController:
     @expose(content_type='multipart/form-data')
     @expose('json')
     def index(self, *args, **kwargs):
-        if request.method != 'POST':
-            return
-
         if 'file' not in request.params:
             abort(400, 'Invalid request: no files uploaded.')
 
@@ -25,3 +26,13 @@ class MediaController:
 
         response.status = '201'
         response.headers['Location'] = permalink
+
+    @expose()
+    def _default(self, view, *remainder):
+        body = media.get_file(request.path[12:])
+        mime_type = guess_type(request.path[12:])[0]
+        r = Response(
+            content_type=mime_type
+        )
+        r.app_iter = FileIter(body)
+        return r

@@ -27,6 +27,7 @@ def setup_app(config):
     return make_app(
         app_conf.pop('root'),
         logging=getattr(config, 'logging', {}),
+        guess_content_type_from_ext=False,
         hooks=[
             TransactionHook(
                 storage.start,
