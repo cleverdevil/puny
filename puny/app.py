@@ -22,8 +22,8 @@ class ForceJSONContentTypeHook(PecanHook):
 
 
 def setup_app(config):
+    storage.init()
     app_conf = dict(config.app)
-
     return make_app(
         app_conf.pop('root'),
         logging=getattr(config, 'logging', {}),

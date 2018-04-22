@@ -1,170 +1,131 @@
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, String, DateTime, JSON, Boolean, create_engine
+from sqlalchemy.orm import sessionmaker
 from pecan import conf, request
 
-import ZODB, ZODB.FileStorage, BTrees.OOBTree
-import persistent
-import persistent.list
-import transaction
+import urllib.parse
+import json
+import boto3
 import maya
 
 
-fs = ZODB.FileStorage.FileStorage(conf.db.path)
-db = ZODB.DB(fs)
+# define model objects
+Base = declarative_base()
 
+class Post(Base):
+    __tablename__ = 'posts'
 
-class Entry(persistent.Persistent):
-
-    def __init__(self, mf2, permalink):
-        self.mf2 = mf2
-        self.permalink = permalink
-        self.deleted = False
-
-    def update(self, mf2):
-        self.mf2 = mf2
-        self._p_changed = 1
-
-    @property
-    def published(self):
-        return self.mf2.get('properties', {}).get('published', [None])[0]
-
-
-class EntryIndex(persistent.Persistent):
-
-    def __init__(self):
-        self.all = persistent.list.PersistentList()
-        self.by_date = BTrees.OOBTree.OOBTree()
-        self.by_permalink = BTrees.OOBTree.OOBTree()
-        self.by_category = BTrees.OOBTree.OOBTree()
-
-    def add(self, mf2, permalink):
-        # add to "all" list
-        entry = Entry(mf2, permalink)
-        self.all.append(entry)
-        self.all.sort(key=lambda x: x.published)
-
-        # add to permalink index
-        self.by_permalink[permalink] = entry
-
-        # add to date index
-        published = mf2.get('properties', {}).get('published', [None])[0]
-        if published:
-            published = maya.parse(published)
-            self.by_date.setdefault(published, []).append(entry)
-
-        # add to category index
-        categories = mf2.get('properties', {}).get('category', [])
-        for category in categories:
-            self.by_category.setdefault(category, []).append(entry)
-
-    def delete(self, entry):
-        # remove from "all" list
-        self.all.remove(entry)
-
-        # remove from permalink index
-        del self.by_permalink[entry.permalink]
-
-        # remove from date index
-        published = entry.mf2.get('properties', {}).get('published', [None])[0]
-        if published:
-            published = maya.parse(published)
-            self.by_date[published].remove(entry)
-
-        # remove from category index
-        categories = mf2.get('properties', {}).get('category', [])
-        for category in categories:
-            self.by_category[category].remove(entry)
-
-        # tell the object to die in a fire
-        del entry
+    permalink = Column(String(256), primary_key=True)
+    published = Column(DateTime)
+    deleted = Column(Boolean, default=False)
+    mf2 = Column(JSON)
 
 
 # pecan specific transaction functions
+engine = None
+Session = None
+def init():
+    global engine
+    global Session
+
+    engine = create_engine(conf.db.url)
+    Session = sessionmaker(bind=engine)
+    Base.metadata.bind = engine
+    Base.metadata.create_all()
 
 
 def start():
-    request.transaction = transaction.TransactionManager()
-    request.dbc = db.open(request.transaction)
+    request.session = Session()
 
 
 def start_read_only():
-    start()
+    request.session = Session()
 
 
 def commit():
-    request.transaction.commit()
+    request.session.commit()
 
 
 def rollback():
-    request.transaction.abort()
+    request.session.rollback()
 
 
 def clear():
-    request.transaction.abort()
-    request.dbc = None
-    request.transaction = None
+    request.session.close()
 
 
 # direct access
 
-
-def connect():
-    if not hasattr(request.dbc.root, 'entries'):
-        request.dbc.root.entries = EntryIndex()
-    return request.dbc
+def _slug(permalink):
+    return urllib.parse.urlparse(permalink).path
 
 
-def store(json):
-    conn = connect()
-    conn.root.entries.add(json, json['properties']['url'][0])
+def store(mf2):
+    if not mf2['properties'].get('published'):
+        mf2['properties']['published'] = maya.now().datetime().isoformat()
+
+    permalink = mf2['properties']['url'][0]
+    published = maya.parse(mf2['properties']['published'][0]).datetime()
+
+    post = Post(
+        permalink=_slug(permalink),
+        published=published,
+        mf2=mf2,
+        deleted=False
+    )
+    request.session.add(post)
 
 
-def get_by_permalink(permalink, hidden=False):
-    conn = connect()
-    entry = conn.root.entries.by_permalink.get(permalink)
-    if entry:
-        if entry.deleted:
+def get_by_permalink(permalink, hidden=False, return_object=False):
+    post = request.session.query(Post).get(_slug(permalink))
+
+    if post:
+        if post.deleted:
             if hidden:
-                return entry.mf2
-
+                return post if return_object else post.mf2
         else:
-            return entry.mf2
+            return post if return_object else post.mf2
 
 
 def update(permalink, mf2):
-    entry = connect().root.entries.by_permalink.get(permalink)
-    if entry:
-        entry.update(mf2)
+    post = get_by_permalink(permalink, return_object=True, hidden=True)
+    if not post:
+        return
+
+    post.mf2 = mf2
+    post.published = maya.parse(mf2['properties']['published'][0]).datetime()
+    request.session.add(post)
 
 
 def delete(permalink, soft=False):
-    conn = connect()
-    entry = conn.root.entries.by_permalink.get(permalink)
-    if entry:
+    post = get_by_permalink(permalink, return_object=True, hidden=True)
+    if post:
         if soft:
-            entry.deleted = True
+            post.deleted = True
+            request.session.add(post)
         else:
-            conn.root.entries.delete(entry)
+            request.session.delete(post)
 
 
 def undelete(permalink):
-    entry = connect().root.entries.by_permalink.get(permalink)
-    if entry:
-        entry.deleted = False
+    post = get_by_permalink(permalink, return_object=True, hidden=True)
+    if post:
+        post.deleted = False
+        request.session.add(post)
 
 
-def find(limit=20, offset=0):
-    conn = connect()
+def find(limit=20, offset=0, category=None):
+    posts = request.session.query(Post).filter(
+        Post.deleted == False
+    )
 
-    count = 0
-    skipped = 0
-    for entry in reversed(conn.root.entries.all):
-        if skipped < offset:
-            if not entry.deleted:
-                skipped += 1
-                continue
+    if category:
+        print(category)
+        posts = posts.filter(
+            Post.mf2['properties']['category'].comparator.contains(category)
+        )
 
-        if not entry.deleted:
-            count += 1
-            yield entry.mf2
+    posts = posts.order_by(-Post.published).limit(limit).offset(offset)
 
-        if count == limit:
-            break
+    for post in posts:
+        yield post.mf2

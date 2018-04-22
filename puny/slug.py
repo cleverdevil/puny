@@ -3,7 +3,7 @@ from slugify import UniqueSlugify
 from . import storage
 
 import uuid
-
+import maya
 
 def unique_check(text, uids):
     permalink = conf.app.public_url + '/view/entry/' + text
@@ -40,4 +40,4 @@ def generate_slug(mf2):
         else:
             seed = str(uuid.uuid4())
 
-    return slugify_unique(seed, to_lower=True, max_length=20)
+    return slugify_unique(seed, to_lower=True, max_length=40)

@@ -10,8 +10,10 @@ requests = "*"
 hashfs = "*"
 maya = "*"
 awesome-slugify = "*"
-ZODB = "*"
-zodb = "*"
+boto3 = "*"
+sqlalchemy = "*"
+pymysql = "*"
+jsl = "*"
 
 [dev-packages]
 watchdog = "*"
