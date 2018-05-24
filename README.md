@@ -21,14 +21,13 @@ Implementation Details
 Puny makes use of:
 
 * The [Pecan](http://www.pecanpy.org) Python web framework.
-* [ZODB](http://www.zodb.org) for persistence. No database server required!
 * [Mako](http://www.makotemplates.org) for templating.
 * My [microformats2](https://github.com/cleverdevil/microformats2) library for
   validation and post type discovery.
-* [HashFS](https://github.com/dgilland/hashfs) for storing uploads on-disk.
 * [Maya](https://github.com/kennethreitz/maya) for dealing with dates and times.
 * [awesome-slugify](https://pypi.python.org/pypi/awesome-slugify) for slug gen.
-
+* MySQL with JSON columns to store content.
+* Amazon S3 for media uploads.
 
 Project Status
 --------------
